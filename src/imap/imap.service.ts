@@ -167,30 +167,57 @@ export class ImapService implements OnModuleInit {
           const messages = await connection.client.search({ unseen: true });
 
           for (const seq of messages) {
-            // Fetch the message
-            const message = await connection.client.fetchOne(seq, {
-              source: true,
-            });
-            const { envelope } = message;
+            try {
+              // Fetch the message
+              const message = await connection.client.fetchOne(seq, {
+                source: true,
+                envelope: true,
+              });
 
-            // Parse email details
-            const from = envelope.from?.[0]
-              ? `${envelope.from[0].name || ''} <${envelope.from[0].address}>`
-              : 'Unknown Sender';
-            const subject = envelope.subject || '(No Subject)';
-            const date = envelope.date
-              ? new Date(envelope.date).toLocaleString()
-              : 'Unknown Date';
+              if (!message || !message.envelope) {
+                this.logger.warn(
+                  `Skipping message with missing envelope data for account ${account.email}`,
+                );
+                continue;
+              }
 
-            // Send notification to Telegram
-            await this.telegramService.sendEmailNotification({
-              chatId: account.chatId,
-              emailAccountId: accountId,
-              messageId: seq.toString(),
-              from,
-              subject,
-              date,
-            });
+              const { envelope } = message;
+
+              // Parse email details safely with checks for undefined values
+              let from = 'Unknown Sender';
+              if (
+                envelope.from &&
+                envelope.from.length > 0 &&
+                envelope.from[0]
+              ) {
+                from = `${envelope.from[0].name || ''} <${envelope.from[0].address || 'unknown@example.com'}>`;
+              }
+
+              const subject = envelope.subject || '(No Subject)';
+              const date = envelope.date
+                ? new Date(envelope.date).toLocaleString()
+                : 'Unknown Date';
+
+              this.logger.log(
+                `Processing new email: From: ${from}, Subject: ${subject}`,
+              );
+
+              // Send notification to Telegram
+              await this.telegramService.sendEmailNotification({
+                chatId: account.chatId,
+                emailAccountId: accountId,
+                messageId: seq.toString(),
+                from,
+                subject,
+                date,
+              });
+            } catch (messageError) {
+              this.logger.error(
+                `Error processing specific email for account ${account.email}: ${this.getErrorMessage(messageError)}`,
+              );
+              // Continue with next message
+              continue;
+            }
           }
         } catch (error) {
           this.logger.error(
@@ -199,14 +226,12 @@ export class ImapService implements OnModuleInit {
         }
       });
 
-      // Start IDLE to listen for new emails
-      if (connection.client.usable) {
-        this.logger.log(`Starting IDLE for account ${account.email}`);
-        connection.client.idle();
-      }
+      // Start IDLE mode to listen for changes
+      this.logger.log(`Starting IDLE for account ${account.email}`);
+      await connection.client.idle();
     } catch (error) {
       this.logger.error(
-        `Error setting up email listener for account ${account.email}: ${this.getErrorMessage(error)}`,
+        `Error setting up email listening for account ${account.email}: ${this.getErrorMessage(error)}`,
       );
     }
   }
@@ -240,32 +265,47 @@ export class ImapService implements OnModuleInit {
     }
 
     try {
+      const account = await this.emailAccountService.findOne(accountId);
+      if (!account) {
+        throw new Error(`Account with ID ${accountId} not found`);
+      }
+
+      // Use the spam folder name from account settings, default to 'Spam'
+      const spamFolder = account.spamFolder || 'Spam';
+
       const client = this.connections.get(accountId)?.client;
       if (client && client.usable) {
         // First, open the INBOX
         await client.mailboxOpen('INBOX');
 
-        // Move the message to the Junk/Spam folder
-        // Note: Different email providers might use different folder names for spam
-        // Common names: Junk, Spam, Junk E-mail
-        const spamFolderNames = ['Junk', 'Spam', 'Junk E-mail'];
-
-        // Try to find a spam folder
-        const mailboxes = await client.list();
-        const spamFolder = mailboxes.find((box) =>
-          spamFolderNames.some(
-            (name) => box.name.includes(name) || box.path.includes(name),
-          ),
-        );
-
-        if (spamFolder) {
-          // Move to spam folder
-          await client.messageMove(messageId, spamFolder.path);
+        // Try to move the message to the spam folder
+        try {
+          await client.messageMove(messageId, spamFolder);
+          this.logger.log(`Message ${messageId} moved to ${spamFolder} folder`);
           return true;
-        } else {
-          // If no spam folder found, just mark with Junk flag
-          await client.messageFlagsAdd(messageId, ['$Junk', '\\Seen']);
-          return true;
+        } catch (error) {
+          // If the folder doesn't exist, try to create it and then move
+          this.logger.warn(
+            `Error moving to ${spamFolder} folder: ${this.getErrorMessage(error)}`,
+          );
+
+          try {
+            // Create the spam folder if it doesn't exist
+            await client.mailboxCreate(spamFolder);
+            this.logger.log(`Created ${spamFolder} folder`);
+
+            // Try moving again
+            await client.messageMove(messageId, spamFolder);
+            this.logger.log(
+              `Message ${messageId} moved to ${spamFolder} folder after creation`,
+            );
+            return true;
+          } catch (createError) {
+            this.logger.error(
+              `Failed to create or move to ${spamFolder} folder: ${this.getErrorMessage(createError)}`,
+            );
+            return false;
+          }
         }
       }
       return false;

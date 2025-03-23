@@ -10,6 +10,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { ImapModule } from './imap/imap.module';
 import { EncryptionModule } from './encryption/encryption.module';
 import { SharedModule } from './shared/shared.module';
+import { WebModule } from './web/web.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { SharedModule } from './shared/shared.module';
     TelegramModule,
     ImapModule,
     EncryptionModule,
+    WebModule,
   ],
   controllers: [AppController],
   providers: [AppService],

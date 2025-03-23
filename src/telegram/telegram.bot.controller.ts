@@ -64,20 +64,65 @@ export class TelegramBotController {
   async help(@Ctx() ctx: TelegrafContext) {
     await ctx.reply(
       '📩 *Email Forwarder Bot Help*\n\n' +
-        'This bot forwards your emails to Telegram and allows you to manage them.\n\n' +
+        'This bot forwards your emails to Telegram and allows you to manage them\\.\n\n' +
         '*Commands:*\n' +
-        '/start - Start the bot\n' +
-        '/addemail - Add a new email account\n' +
-        '/myemails - List your connected email accounts\n' +
-        '/remove_email - Remove an email account\n' +
-        '/help - Show this help message',
-      { parse_mode: 'Markdown' },
+        '/start \\- Start the bot\n' +
+        '/addemail \\- Add a new email account\n' +
+        '/myemails \\- List your connected email accounts\n' +
+        '/remove\\_email \\- Remove an email account\n' +
+        '/reset\\_password \\- Reset password for an email account\n' +
+        '/help \\- Show this help message',
+      { parse_mode: 'MarkdownV2' },
     );
   }
 
   @Command('addemail')
   async addEmail(@Ctx() ctx: TelegrafContext) {
-    await ctx.scene.enter(ADD_EMAIL_SCENE);
+    try {
+      const chatId = ctx.chat?.id;
+      const userId = ctx.from?.id;
+
+      if (!chatId || !userId) {
+        this.logger.error('Chat or user ID missing in context');
+        return;
+      }
+
+      // Generate UUID token for secure web form access
+      const token = await this.telegramService.generateAddEmailToken(
+        chatId,
+        userId,
+      );
+
+      // Create web link
+      const webLink = `${process.env.APP_URL || 'http://localhost:3000'}/api/email/add?token=${token}`;
+
+      // Simple text message with the link
+      await ctx.reply(
+        `📧 Add Email Account\n\n` +
+          `To securely add your email account, please use the link below:\n\n${webLink}\n\n` +
+          `This link will expire in 30 minutes for security reasons.`,
+      );
+
+      /* Код с кнопками для будущего использования
+      // Create inline keyboard with the link button
+      const keyboard = Markup.inlineKeyboard([
+        [Markup.button.url('📧 Add Email Account', webLink)],
+      ]);
+
+      await ctx.reply(
+        'To securely add your email account, please use the button below.\n' +
+        'This link will expire in 30 minutes for security reasons.',
+        { reply_markup: keyboard.reply_markup },
+      );
+      */
+    } catch (error) {
+      this.logger.error(
+        `Error generating link: ${this.getErrorMessage(error)}`,
+      );
+      await ctx.reply(
+        '❌ An error occurred while generating the link. Please try again later.',
+      );
+    }
   }
 
   @Command('myemails')
@@ -201,10 +246,11 @@ export class TelegramBotController {
       const success = await this.imapService.markAsRead(accountId, messageId);
 
       if (success) {
-        await ctx.editMessageText(
-          (ctx.callbackQuery.message as any).text + '\n\n✅ Marked as read',
-          { parse_mode: 'MarkdownV2' },
-        );
+        // Получить оригинальный текст без форматирования
+        const originalText = (ctx.callbackQuery.message as any).text;
+
+        // Редактируем сообщение без использования Markdown
+        await ctx.editMessageText(`${originalText}\n\n✅ Marked as read`);
       } else {
         await ctx.answerCbQuery('Failed to mark message as read');
       }
@@ -230,10 +276,11 @@ export class TelegramBotController {
       const success = await this.imapService.markAsSpam(accountId, messageId);
 
       if (success) {
-        await ctx.editMessageText(
-          (ctx.callbackQuery.message as any).text + '\n\n🚫 Marked as spam',
-          { parse_mode: 'MarkdownV2' },
-        );
+        // Получить оригинальный текст без форматирования
+        const originalText = (ctx.callbackQuery.message as any).text;
+
+        // Редактируем сообщение без использования Markdown
+        await ctx.editMessageText(`${originalText}\n\n🚫 Marked as spam`);
       } else {
         await ctx.answerCbQuery('Failed to mark message as spam');
       }
@@ -242,6 +289,104 @@ export class TelegramBotController {
         `Error marking as spam: ${this.getErrorMessage(error)}`,
       );
       await ctx.answerCbQuery('An error occurred');
+    }
+  }
+
+  @Command('reset_password')
+  async resetPasswordCommand(@Ctx() ctx: TelegrafContext) {
+    if (!ctx.chat?.id) {
+      this.logger.error('Chat ID missing in context');
+      return;
+    }
+
+    const chatId = ctx.chat.id;
+
+    try {
+      const accounts = await this.emailAccountService.findByChatId(chatId);
+
+      if (accounts.length === 0) {
+        await ctx.reply(
+          'You have no email accounts to update the password for.',
+        );
+        return;
+      }
+
+      const buttons = accounts.map((account) => {
+        return [
+          Markup.button.callback(`${account.email}`, `resetpass:${account.id}`),
+        ];
+      });
+
+      await ctx.reply(
+        'Select an email account to reset password:',
+        Markup.inlineKeyboard(buttons),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error preparing password reset: ${this.getErrorMessage(error)}`,
+      );
+      await ctx.reply('❌ An error occurred while preparing password reset.');
+    }
+  }
+
+  @Action(/^resetpass:(\d+)$/)
+  async resetPassword(@Ctx() ctx: TelegrafContext) {
+    if (!ctx.match || !ctx.chat?.id || !ctx.from?.id) {
+      this.logger.error('Match, chat ID, or user ID missing in context');
+      return;
+    }
+
+    const accountId = parseInt(ctx.match[1]);
+    const chatId = ctx.chat.id;
+    const userId = ctx.from.id;
+
+    try {
+      const account = await this.emailAccountService.findOne(accountId);
+
+      if (!account || account.chatId !== chatId) {
+        await ctx.editMessageText(
+          '❌ Account not found or you do not have permission to reset its password.',
+        );
+        return;
+      }
+
+      // Generate UUID token for secure web form access
+      const token = await this.telegramService.generatePasswordResetToken(
+        accountId,
+        chatId,
+        userId,
+      );
+
+      // Create web link
+      const webLink = `${process.env.APP_URL || 'http://localhost:3000'}/api/email/reset-password?token=${token}`;
+
+      // Simple text message with the link
+      await ctx.editMessageText(
+        `📧 Reset Password for ${account.email}\n\n` +
+          `To reset your password, use this link:\n\n${webLink}\n\n` +
+          `This link will expire in 30 minutes for security reasons.`,
+      );
+
+      /* Код с кнопками для будущего использования
+      // Create inline keyboard with the link button
+      const keyboard = Markup.inlineKeyboard([
+        [Markup.button.url('🔑 Reset Password', webLink)],
+      ]);
+
+      await ctx.editMessageText(
+        `Reset password for account: ${account.email}\n\n` +
+        'Use the button below to securely reset your password.\n' +
+        'This link will expire in 30 minutes for security reasons.',
+        { reply_markup: keyboard.reply_markup },
+      );
+      */
+    } catch (error) {
+      this.logger.error(
+        `Error generating password reset link: ${this.getErrorMessage(error)}`,
+      );
+      await ctx.editMessageText(
+        '❌ An error occurred while generating the password reset link. Please try again later.',
+      );
     }
   }
 }

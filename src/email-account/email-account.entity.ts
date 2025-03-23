@@ -41,6 +41,9 @@ export class EmailAccount {
   @Column({ default: true })
   useTls: boolean;
 
+  @Column({ default: 'Spam', nullable: true })
+  spamFolder: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

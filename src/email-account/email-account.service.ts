@@ -85,4 +85,24 @@ export class EmailAccountService {
   async activateAccount(id: number): Promise<EmailAccount | null> {
     return this.update(id, { isActive: true });
   }
+
+  async updatePassword(
+    id: number,
+    newPassword: string,
+  ): Promise<EmailAccount | null> {
+    // Encrypt the new password
+    const encryptedPassword = this.encryptionService.encrypt(newPassword);
+
+    // Find the account
+    const account = await this.findOne(id);
+    if (!account) {
+      return null;
+    }
+
+    // Update the password
+    account.password = encryptedPassword;
+
+    // Save the updated account
+    return this.emailAccountRepository.save(account);
+  }
 }

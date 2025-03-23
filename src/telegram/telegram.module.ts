@@ -6,9 +6,10 @@ import {
   ADD_EMAIL_SCENE,
 } from './telegram.bot.controller';
 import { ImapModule } from '../imap/imap.module';
+import { EmailAccountModule } from '../email-account/email-account.module';
 
 @Module({
-  imports: [ImapModule],
+  imports: [ImapModule, EmailAccountModule],
   providers: [TelegramService, TelegramBotController, AddEmailScene],
   exports: [TelegramService],
 })

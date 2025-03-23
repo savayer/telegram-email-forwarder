@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Email Account - Email Forwarder</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type='text'],
+      input[type='email'],
+      input[type='password'],
+      input[type='number'] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+      }
+      .checkbox-group input {
+        margin-right: 10px;
+      }
+      button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      .info-box {
+        background-color: #f8f9fa;
+        border-left: 4px solid #2c3e50;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+      .error-box {
+        background-color: #f8d7da;
+        border-left: 4px solid #dc3545;
+        color: #721c24;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: none;
+      }
+      .success-box {
+        background-color: #d4edda;
+        border-left: 5px solid #28a745;
+        color: #155724;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: none;
+      }
+      .loading {
+        display: none;
+        text-align: center;
+        margin: 20px 0;
+      }
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top: 4px solid #3498db;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      #email-form {
+        display: none;
+      }
+      #invalid-token {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Add Email Account</h1>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Validating token...</p>
+    </div>
+
+    <div id="invalid-token" class="error-box">
+      <p>
+        Your token is invalid or has expired. Please request a new link from the
+        Telegram bot.
+      </p>
+    </div>
+
+    <div id="email-form">
+      <div class="info-box">
+        <p>Please enter your email account details below.</p>
+        <p>
+          Your email credentials will be encrypted before being stored. This
+          form is secure and the link will expire in 30 minutes.
+        </p>
+      </div>
+
+      <div id="error-message" class="error-box"></div>
+      <div id="success-message" class="success-box"></div>
+
+      <form id="add-email-form">
+        <input type="hidden" id="token" name="token" />
+
+        <div class="form-group">
+          <label for="email">Email Address:</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            placeholder="example@gmail.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            placeholder="Your email password"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="imapHost">IMAP Server:</label>
+          <input
+            type="text"
+            id="imapHost"
+            name="imapHost"
+            required
+            placeholder="imap.gmail.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="imapPort">IMAP Port:</label>
+          <input
+            type="number"
+            id="imapPort"
+            name="imapPort"
+            value="993"
+            required
+          />
+        </div>
+
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="useTls" name="useTls" checked />
+          <label for="useTls">Use TLS/SSL (recommended)</label>
+        </div>
+
+        <div class="form-group">
+          <label for="spamFolder">Spam Folder Name:</label>
+          <input
+            type="text"
+            id="spamFolder"
+            name="spamFolder"
+            value="Spam"
+            placeholder="Spam or Junk"
+          />
+        </div>
+
+        <button type="submit" id="submit-btn">Add Email Account</button>
+      </form>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        // Get the token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (!token) {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('invalid-token').style.display = 'block';
+          return;
+        }
+
+        // Set token in the form
+        document.getElementById('token').value = token;
+
+        // Show loading indicator
+        document.getElementById('loading').style.display = 'block';
+
+        // Validate token
+        fetch(`/api/email/validate-token?token=${token}`)
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById('loading').style.display = 'none';
+
+            if (data.isValid) {
+              // Show form if token is valid
+              document.getElementById('email-form').style.display = 'block';
+            } else {
+              // Show error if token is invalid
+              document.getElementById('invalid-token').style.display = 'block';
+              document.getElementById('invalid-token').innerText =
+                data.message || 'Invalid token';
+            }
+          })
+          .catch((error) => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('invalid-token').style.display = 'block';
+            document.getElementById('invalid-token').innerText =
+              'Error validating token: ' + error.message;
+          });
+
+        // Handle form submission
+        document
+          .getElementById('add-email-form')
+          .addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Hide any previous messages
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('success-message').style.display = 'none';
+
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submit-btn').disabled = true;
+
+            // Get form data
+            const formData = {
+              token: document.getElementById('token').value,
+              email: document.getElementById('email').value,
+              password: document.getElementById('password').value,
+              imapHost: document.getElementById('imapHost').value,
+              imapPort: parseInt(document.getElementById('imapPort').value),
+              useTls: document.getElementById('useTls').checked,
+              spamFolder: document.getElementById('spamFolder').value,
+            };
+
+            // Submit form
+            fetch('/api/email/add', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(formData),
+            })
+              .then((response) => {
+                if (!response.ok) {
+                  return response.json().then((data) => {
+                    throw new Error(
+                      data.message || 'Failed to add email account',
+                    );
+                  });
+                }
+                return response.json();
+              })
+              .then((data) => {
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submit-btn').disabled = false;
+
+                // Show success message
+                document.getElementById('success-message').innerText =
+                  data.message || 'Email account added successfully!';
+                document.getElementById('success-message').style.display =
+                  'block';
+
+                // Hide form
+                document.getElementById('add-email-form').style.display =
+                  'none';
+
+                // Notify Telegram app if possible
+                if (window.Telegram && window.Telegram.WebApp) {
+                  window.Telegram.WebApp.close();
+                }
+              })
+              .catch((error) => {
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submit-btn').disabled = false;
+
+                // Show error message
+                document.getElementById('error-message').innerText =
+                  error.message;
+                document.getElementById('error-message').style.display =
+                  'block';
+              });
+          });
+      });
+    </script>
+  </body>
+</html>
