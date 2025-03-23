@@ -1,98 +1,206 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Telegram Email Forwarder Bot
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS application that forwards email notifications to Telegram and allows you to interact with them.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- Receive notifications in Telegram when new emails arrive
+- Mark emails as read or spam directly from Telegram
+- Securely store email credentials with encryption
+- Support for multiple email accounts
+- Easy setup through Telegram bot commands
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Prerequisites
 
-## Project setup
+- Node.js (v18+)
+- MySQL database
+- Telegram Bot Token (from [@BotFather](https://t.me/BotFather))
 
-```bash
-$ npm install
+## Installation
+
+### Option 1: Standard Setup
+
+1. Clone the repository
+
+   ```bash
+   git clone https://github.com/yourusername/telegram-email-forwarder.git
+   cd telegram-email-forwarder
+   ```
+
+2. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+3. Configure environment variables
+
+   Copy the `.env.example` file to `.env` and update the values:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Generate encryption keys by running:
+
+   ```bash
+   npm run generate:keys
+   ```
+
+   Update the `.env` file with your database credentials, Telegram bot token, and encryption keys.
+
+4. Create the database
+
+   ```bash
+   npm run init:db
+   ```
+
+5. Build and run the application
+
+   ```bash
+   npm run build
+   npm run start
+   ```
+
+   For development mode:
+
+   ```bash
+   npm run start:dev
+   ```
+
+### Option 2: Docker Setup
+
+1. Clone the repository
+
+   ```bash
+   git clone https://github.com/yourusername/telegram-email-forwarder.git
+   cd telegram-email-forwarder
+   ```
+
+2. Generate encryption keys
+
+   ```bash
+   npm run generate:keys
+   ```
+
+3. Create a `.env` file in the project root with the following content:
+
+   ```
+   TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+   ENCRYPTION_KEY=your_encryption_key_from_step_2
+   ENCRYPTION_IV=your_encryption_iv_from_step_2
+   ```
+
+   **Database user configuration:**
+
+   - If you use `DB_USERNAME=root` in your `.env` file, it will only be used for connecting the application to MySQL, not for creating a MySQL user
+   - In the Docker setup, MySQL automatically creates a user named `telegram_bot` for database operations
+
+   Verify your environment variables:
+
+   ```bash
+   npm run check:env
+   ```
+
+4. Choose your Docker mode:
+
+   **For development** (mounts local files, hot-reload):
+
+   ```bash
+   npm run docker:dev
+   # or directly: docker-compose up app-dev
+   ```
+
+   **For production** (builds optimized image):
+
+   ```bash
+   npm run docker:prod
+   # or directly: docker-compose --profile prod up -d app-prod db
+   ```
+
+   Both modes will start the application and a MySQL database.
+
+   Other useful Docker commands:
+
+   ```bash
+   # View logs
+   npm run docker:logs
+
+   # Stop containers
+   npm run docker:stop
+
+   # Build production image without starting
+   npm run docker:build
+   ```
+
+## Usage
+
+1. Start the bot on Telegram by sending `/start`
+2. Add an email account with `/addemail` and follow the prompts
+3. View your connected email accounts with `/myemails`
+4. Remove an email account with `/remove_email`
+
+When you receive new emails, the bot will send you a notification with options to mark the email as read or spam.
+
+## Bot Commands
+
+- `/start` - Start the bot and see available commands
+- `/help` - Show help information
+- `/addemail` - Add a new email account
+- `/myemails` - List your connected email accounts
+- `/remove_email` - Remove an email account
+
+## IMAP Configuration for Common Email Providers
+
+### Gmail
+
+- IMAP Server: imap.gmail.com
+- IMAP Port: 993
+- TLS: Yes
+- Note: You need to enable "Less secure app access" or use an app password
+
+### Outlook/Hotmail
+
+- IMAP Server: outlook.office365.com
+- IMAP Port: 993
+- TLS: Yes
+
+### Yahoo
+
+- IMAP Server: imap.mail.yahoo.com
+- IMAP Port: 993
+- TLS: Yes
+
+## Security Considerations
+
+- Email passwords are stored encrypted in the database
+- All database communication uses encryption keys from environment variables
+- Consider using app-specific passwords instead of your main account password when possible
+
+## Development Notes
+
+### TypeScript Configuration
+
+This project uses a relaxed TypeScript configuration due to compatibility issues between nestjs-telegraf and newer versions of NestJS/TypeScript. The `tsconfig.json` has the following settings to help with these compatibility issues:
+
+```json
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false
+  }
+}
 ```
 
-## Compile and run the project
+If you encounter type errors during development, you can use type assertions (`as any`) as a workaround for the Telegraf context types.
 
-```bash
-# development
-$ npm run start
+### Docker Build Process
 
-# watch mode
-$ npm run start:dev
+When building with Docker, TypeScript errors related to the Telegraf context types are bypassed by using a special build script that sets the `NODE_ENV` to production. This is a deliberate workaround for the incompatibility between the library types and current TypeScript version.
 
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+If you see TypeScript errors during the Docker build process, they will be ignored and the build will continue as expected in production mode.
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT

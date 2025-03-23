@@ -1,0 +1,5 @@
+start - Start the bot and see available commands
+help - Show help information
+addemail - Add a new email account to receive notifications
+myemails - List your connected email accounts
+remove_email - Remove an email account 
