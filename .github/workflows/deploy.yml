@@ -7,24 +7,34 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+      ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      APP_URL: ${{ secrets.APP_URL }}
+      MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+
     steps:
       - uses: actions/checkout@v2
 
       - name: Create .env file
         run: |
-          touch .env
-          echo 'TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}' >> .env
-          echo 'ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}' >> .env
-          echo 'ENCRYPTION_IV=${{ secrets.ENCRYPTION_IV }}' >> .env
-          echo 'DB_HOST=db' >> .env
-          echo 'DB_PORT=3306' >> .env
-          echo 'DB_USERNAME=${{ secrets.DB_USERNAME }}' >> .env
-          echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env
-          echo 'DB_DATABASE=telegram_bot' >> .env
-          echo 'DB_SYNCHRONIZE=true' >> .env
-          echo 'APP_URL=${{ secrets.APP_URL }}' >> .env
-          echo 'NODE_ENV=production' >> .env
-          echo 'MYSQL_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}' >> .env
+          cat > .env << EOF
+          TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+          ENCRYPTION_KEY=${ENCRYPTION_KEY}
+          ENCRYPTION_IV=${ENCRYPTION_IV}
+          DB_HOST=db
+          DB_PORT=3306
+          DB_USERNAME=${DB_USERNAME}
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_DATABASE=telegram_bot
+          DB_SYNCHRONIZE=true
+          APP_URL=${APP_URL}
+          NODE_ENV=production
+          MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+          EOF
 
       - name: Copy files to server
         uses: appleboy/scp-action@master
