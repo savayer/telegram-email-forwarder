@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Telegram Email Forwarder</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+        text-align: center;
+      }
+      h1 {
+        color: #0088cc;
+        margin-bottom: 20px;
+      }
+      .status {
+        background-color: #f0f8ff;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 20px;
+        border-left: 5px solid #0088cc;
+        text-align: left;
+      }
+      .logo {
+        width: 100px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <img
+      src="https://telegram.org/img/t_logo.svg"
+      alt="Telegram Logo"
+      class="logo"
+    />
+    <h1>Telegram Email Forwarder</h1>
+    <p>This server is running the Telegram Email Forwarder bot.</p>
+
+    <div class="status">
+      <p><strong>Server Status:</strong> Online</p>
+      <p><strong>Version:</strong> 1.0.0</p>
+      <p><strong>Last Update:</strong> <span id="lastUpdate"></span></p>
+    </div>
+
+    <script>
+      document.getElementById('lastUpdate').innerText =
+        new Date().toLocaleString();
+    </script>
+  </body>
+</html>
