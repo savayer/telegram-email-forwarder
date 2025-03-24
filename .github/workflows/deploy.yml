@@ -13,18 +13,18 @@ jobs:
       - name: Create .env file
         run: |
           touch .env
-          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
-          echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}" >> .env
-          echo "ENCRYPTION_IV=${{ secrets.ENCRYPTION_IV }}" >> .env
-          echo "DB_HOST=db" >> .env
-          echo "DB_PORT=3306" >> .env
-          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "DB_DATABASE=telegram_bot" >> .env
-          echo "DB_SYNCHRONIZE=true" >> .env
-          echo "APP_URL=${{ secrets.APP_URL }}" >> .env
-          echo "NODE_ENV=production" >> .env
-          echo "MYSQL_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" >> .env
+          echo 'TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}' >> .env
+          echo 'ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}' >> .env
+          echo 'ENCRYPTION_IV=${{ secrets.ENCRYPTION_IV }}' >> .env
+          echo 'DB_HOST=db' >> .env
+          echo 'DB_PORT=3306' >> .env
+          echo 'DB_USERNAME=${{ secrets.DB_USERNAME }}' >> .env
+          echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env
+          echo 'DB_DATABASE=telegram_bot' >> .env
+          echo 'DB_SYNCHRONIZE=true' >> .env
+          echo 'APP_URL=${{ secrets.APP_URL }}' >> .env
+          echo 'NODE_ENV=production' >> .env
+          echo 'MYSQL_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}' >> .env
 
       - name: Copy files to server
         uses: appleboy/scp-action@master
