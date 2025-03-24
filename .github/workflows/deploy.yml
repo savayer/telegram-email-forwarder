@@ -23,7 +23,7 @@ jobs:
           echo "DB_SYNCHRONIZE=true" >> .env
           echo "APP_URL=${{ secrets.APP_URL }}" >> .env
           echo "NODE_ENV=production" >> .env
-          # MySQL root password для Docker контейнера
+          echo "# MySQL root password for Docker container" >> .env
           echo "MYSQL_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" >> .env
 
       - name: Copy files to server
