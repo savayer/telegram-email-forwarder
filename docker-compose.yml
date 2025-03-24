@@ -34,6 +34,11 @@ services:
       - DB_PORT=3306
       - DB_USERNAME=${DB_USERNAME:-telegram_bot}
       - DB_PASSWORD=${DB_PASSWORD:-password}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ENCRYPTION_IV=${ENCRYPTION_IV}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - APP_URL=${APP_URL}
+      - NODE_ENV=production
     restart: unless-stopped
     profiles: ['prod']
 
