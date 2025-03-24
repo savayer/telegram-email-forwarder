@@ -54,5 +54,33 @@ jobs:
           script: |
             cd /home/Projects/telegram-email-forwarder
             docker-compose down
+
+            # Удаляем том с данными MySQL для гарантированного применения инициализационных скриптов
             docker volume rm telegram-email-forwarder_mysql_data || true
-            docker-compose --profile prod up -d --build
+
+            # Запускаем только базу данных сначала
+            docker-compose up -d --build db
+
+            # Даем базе данных время на инициализацию (30 секунд)
+            echo "Waiting for database to initialize (30 seconds)..."
+            sleep 30
+
+            # Проверяем статус базы данных
+            echo "Checking database status..."
+            docker-compose logs db | tail -n 50
+
+            # Пробуем подключиться к базе данных из хост-системы
+            echo "Testing database connection..."
+            docker-compose exec db mysqladmin -u telegram_bot -p"${DB_PASSWORD}" ping || echo "Failed to connect to database"
+
+            # Запускаем приложение
+            echo "Starting application container..."
+            docker-compose up -d --build app-prod
+
+            # Даем приложению время на запуск (10 секунд)
+            echo "Waiting for application to start (10 seconds)..."
+            sleep 10
+
+            # Выводим логи приложения
+            echo "Application logs:"
+            docker-compose logs app-prod | tail -n 50

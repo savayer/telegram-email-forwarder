@@ -10,12 +10,14 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DB_HOST=db
       - DB_PORT=3306
       - DB_USERNAME=${DB_USERNAME:-telegram_bot}
       - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=telegram_bot
     command: >
       sh -c "npm install --legacy-peer-deps && npm run start:dev"
     restart: unless-stopped
@@ -28,12 +30,14 @@ services:
     ports:
       - '3001:3000'
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DB_HOST=db
       - DB_PORT=3306
       - DB_USERNAME=${DB_USERNAME:-telegram_bot}
       - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=telegram_bot
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - ENCRYPTION_IV=${ENCRYPTION_IV}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
@@ -57,6 +61,21 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-u',
+          'telegram_bot',
+          '--password=${DB_PASSWORD:-password}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   mysql_data:
