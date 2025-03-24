@@ -12,7 +12,8 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" > .env
+          touch .env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
           echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}" >> .env
           echo "ENCRYPTION_IV=${{ secrets.ENCRYPTION_IV }}" >> .env
           echo "DB_HOST=db" >> .env
@@ -23,7 +24,6 @@ jobs:
           echo "DB_SYNCHRONIZE=true" >> .env
           echo "APP_URL=${{ secrets.APP_URL }}" >> .env
           echo "NODE_ENV=production" >> .env
-          echo "# MySQL root password for Docker container" >> .env
           echo "MYSQL_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" >> .env
 
       - name: Copy files to server
