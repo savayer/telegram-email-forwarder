@@ -54,4 +54,5 @@ jobs:
           script: |
             cd /home/Projects/telegram-email-forwarder
             docker-compose down
-            docker-compose up -d --build
+            docker volume rm telegram-email-forwarder_mysql_data || true
+            docker-compose --profile prod up -d --build
