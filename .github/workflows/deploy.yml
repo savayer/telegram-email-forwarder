@@ -1,8 +1,8 @@
-name: Deploy to VPS
+name: main
 
 on:
   push:
-    branches: [main] # или master, в зависимости от названия вашей основной ветки
+    branches: [main]
 
 jobs:
   deploy:
