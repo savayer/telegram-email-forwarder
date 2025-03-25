@@ -28,7 +28,7 @@ import { WebModule } from './web/web.module';
         password: configService.get('DB_PASSWORD', ''),
         database: configService.get('DB_DATABASE', 'email_forwarder'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('DB_SYNCHRONIZE', false),
+        synchronize: true,
       }),
     }),
     TelegrafModule.forRootAsync({
