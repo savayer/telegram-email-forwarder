@@ -36,7 +36,7 @@ services:
       - DB_HOST=db
       - DB_PORT=3306
       - DB_USERNAME=${DB_USERNAME:-telegram_bot}
-      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_DATABASE=telegram_bot
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - ENCRYPTION_IV=${ENCRYPTION_IV}
@@ -53,10 +53,11 @@ services:
     image: mysql:8.0
     command: --default-authentication-plugin=mysql_native_password --bind-address=0.0.0.0
     restart: unless-stopped
-    environment: MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE=telegram_bot
-      MYSQL_USER=telegram_bot
-      MYSQL_PASSWORD=${DB_PASSWORD}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: telegram_bot
+      MYSQL_USER: telegram_bot
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - '3307:3306'
     volumes:

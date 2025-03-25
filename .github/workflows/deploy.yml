@@ -14,7 +14,7 @@ jobs:
       DB_USERNAME: ${{ secrets.DB_USERNAME }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       APP_URL: ${{ secrets.APP_URL }}
-      MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v2
@@ -55,27 +55,12 @@ jobs:
             cd /home/Projects/telegram-email-forwarder
             docker-compose down
 
-            # Удаляем том с данными MySQL для гарантированного применения инициализационных скриптов
+            # Удаляем том с данными MySQL 
             docker volume rm telegram-email-forwarder_mysql_data || true
 
-            # Создаем пустой контейнер для healthcheck
-            mkdir -p healthchecks
-
-            # Запускаем только базу данных сначала
+            # Запускаем базу данных и затем приложение
             docker-compose up -d --build db
-
-            # Даем базе данных время на инициализацию (60 секунд)
-            echo "Waiting for database to initialize (60 seconds)..."
-            sleep 60
-
-            # Запускаем приложение
-            echo "Starting application container..."
             docker-compose up -d --build app-prod
 
-            # Даем приложению время на запуск
-            echo "Waiting for application to start (15 seconds)..."
-            sleep 15
-
             # Выводим логи приложения
-            echo "Application logs:"
             docker-compose logs app-prod | tail -n 50
